@@ -513,10 +513,11 @@ function dumpVoice(){
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(!SR)return;
   if(app.listening){if(app.rec)app.rec.stop();return;}
-  const r=new SR();r.continuous=true;r.interimResults=true;r.lang='en-US';
+  const r=new SR();r.continuous=true;r.interimResults=false;r.lang='en-US';
   const mic=document.getElementById('dMic'),lbl=document.getElementById('dMicLbl'),disp=document.getElementById('dumpTxt');
   app.listening=true;mic.classList.add('on');lbl.textContent='Tap to stop';disp.classList.add('filled');
-  r.onresult=e=>{const t=Array.from(e.results).map(x=>x[0].transcript).join(' ');disp.textContent=t;app.dumpCapture=t;};
+  let ft='';
+  r.onresult=e=>{Array.from(e.results).forEach(res=>{if(res.isFinal)ft+=res[0].transcript+' ';});disp.textContent=ft.trim();app.dumpCapture=ft.trim();};
   r.onend=()=>{app.listening=false;mic.classList.remove('on');lbl.textContent='Tap to speak';};
   r.start();app.rec=r;
 }
@@ -584,10 +585,11 @@ function loadEntries(){
 function bizVoice(){
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR)return;
   if(app.listening){if(app.rec)app.rec.stop();return;}
-  const r=new SR();r.continuous=true;r.interimResults=true;r.lang='en-US';
+  const r=new SR();r.continuous=true;r.interimResults=false;r.lang='en-US';
   const mic=document.getElementById('bMic'),lbl=document.getElementById('bMicLbl'),disp=document.getElementById('bizTxt');
   app.listening=true;mic.classList.add('on');lbl.textContent='Tap to stop';disp.classList.add('filled');
-  r.onresult=e=>{const t=Array.from(e.results).map(x=>x[0].transcript).join(' ');disp.textContent=t;app.bizCapture=t;};
+  let ft2='';
+  r.onresult=e=>{Array.from(e.results).forEach(res=>{if(res.isFinal)ft2+=res[0].transcript+' ';});disp.textContent=ft2.trim();app.bizCapture=ft2.trim();};
   r.onend=()=>{app.listening=false;mic.classList.remove('on');lbl.textContent='Tap to record';};
   r.start();app.rec=r;
 }
