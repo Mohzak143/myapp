@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#060d1a">
+<title>.</title>
+<link rel="manifest" href="manifest.json">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+body{background:#060d1a;min-height:100vh;font-family:'DM Sans',sans-serif;color:#e2e8f0;overflow-x:hidden;overscroll-behavior:none;}
+input,textarea,button{font-family:'DM Sans',sans-serif;}
+#app{min-height:100vh;display:flex;flex-direction:column;}
+
+/* ── SCREENS ── */
+.screen{display:none;flex-direction:column;min-height:100vh;}
+.screen.active{display:flex;}
+.center-screen{align-items:center;justify-content:center;padding:2rem;}
+
+/* ── HOME ── */
+#home{align-items:center;justify-content:center;position:relative;overflow:hidden;}
+.bg-orb{position:absolute;border-radius:50%;filter:blur(80px);pointer-events:none;}
+.orb1{width:300px;height:300px;background:rgba(55,138,221,0.06);top:-50px;right:-80px;}
+.orb2{width:250px;height:250px;background:rgba(127,119,221,0.05);bottom:-30px;left:-60px;}
+.home-inner{display:flex;flex-direction:column;align-items:center;z-index:1;}
+.app-brand{font-size:10px;letter-spacing:0.2em;color:#1e2a3a;margin-bottom:3.5rem;text-transform:uppercase;}
+.mic-ring{width:130px;height:130px;border-radius:50%;border:1px solid #0f1e30;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.3s;position:relative;}
+.mic-ring::before{content:'';position:absolute;inset:-8px;border-radius:50%;border:0.5px solid #0a1520;transition:all 0.3s;}
+.mic-ring:active{transform:scale(0.95);}
+.mic-ring.listening{border-color:#1e4a7a;box-shadow:0 0 0 0 rgba(55,138,221,0.4);animation:sonar 1.5s ease-out infinite;}
+.mic-ring.heart-mode{border-color:#2d1f6e;}
+.mic-ring.heart-mode.listening{border-color:#534AB7;box-shadow:0 0 0 0 rgba(127,119,221,0.4);animation:sonar-purple 1.5s ease-out infinite;}
+.mic-disc{width:88px;height:88px;border-radius:50%;background:#080f1e;border:0.5px solid #0f1e30;display:flex;align-items:center;justify-content:center;transition:all 0.3s;}
+.listening .mic-disc{background:#091828;border-color:#1a3a6a;}
+.heart-mode .mic-disc{background:#0d0820;border-color:#2d1f6e;}
+.heart-mode.listening .mic-disc{background:#140e2e;border-color:#3d2f9e;}
+@keyframes sonar{0%{box-shadow:0 0 0 0 rgba(55,138,221,0.4);}100%{box-shadow:0 0 0 28px rgba(55,138,221,0);}}
+@keyframes sonar-purple{0%{box-shadow:0 0 0 0 rgba(127,119,221,0.4);}100%{box-shadow:0 0 0 28px rgba(127,119,221,0);}}
+
+.mic-icon{transition:all 0.3s;}
+.mic-icon path,.mic-icon rect,.mic-icon line{stroke:#1e3a5f;transition:stroke 0.3s;}
+.listening .mic-icon path,.listening .mic-icon rect,.listening .mic-icon line{stroke:#378ADD;}
+.heart-mode .mic-icon path,.heart-mode .mic-icon rect,.heart-mode .mic-icon line{stroke:#534AB7;}
+.heart-mode.listening .mic-icon path,.heart-mode.listening .mic-icon rect,.heart-mode.listening .mic-icon line{stroke:#7F77DD;}
+
+.wave-row{display:flex;align-items:center;gap:3px;height:24px;margin-top:2rem;opacity:0;transition:opacity 0.4s;}
+.wave-row.on{opacity:1;}
+.wb{width:3px;border-radius:3px;background:#378ADD;animation:wb 0.9s ease-in-out infinite;}
+.heart-mode ~ .wave-row .wb,.wave-row.purple .wb{background:#7F77DD;}
+.wb:nth-child(1){height:5px;animation-delay:0s;}
+.wb:nth-child(2){height:12px;animation-delay:0.1s;}
+.wb:nth-child(3){height:20px;animation-delay:0.2s;}
+.wb:nth-child(4){height:12px;animation-delay:0.3s;}
+.wb:nth-child(5){height:5px;animation-delay:0.4s;}
+@keyframes wb{0%,100%{transform:scaleY(0.3);}50%{transform:scaleY(1);}}
+
+.status{font-size:12px;color:#1e2a3a;margin-top:1.5rem;letter-spacing:0.04em;min-height:18px;transition:color 0.3s;text-align:center;}
+.status.on{color:#334155;}
+.status.purple{color:#534AB7;}
+
+/* ── SETTINGS KEY ICON ── */
+.settings-btn{position:absolute;bottom:2rem;right:1.5rem;width:36px;height:36px;border-radius:50%;border:0.5px solid #0f1e30;background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:2;}
+.settings-btn svg path{stroke:#1e2a3a;}
+
+/* ── SETTINGS PANEL ── */
+#settings-panel{position:fixed;bottom:0;left:0;right:0;background:#080f1e;border-top:0.5px solid #0f1e30;padding:1.5rem;border-radius:16px 16px 0 0;transform:translateY(100%);transition:transform 0.3s ease;z-index:100;}
+#settings-panel.open{transform:translateY(0);}
+.sp-title{font-size:11px;color:#1e3a5f;letter-spacing:0.08em;margin-bottom:1rem;}
+.sp-label{font-size:12px;color:#334155;margin-bottom:6px;}
+.sp-input{width:100%;background:#060d1a;border:0.5px solid #1e2a3a;border-radius:8px;padding:12px 14px;font-size:13px;color:#94a3b8;outline:none;letter-spacing:0.03em;}
+.sp-input:focus{border-color:#378ADD;}
+.sp-save{margin-top:10px;width:100%;background:#091828;border:0.5px solid #1e3a5f;border-radius:8px;padding:11px;font-size:13px;color:#6ba3d6;cursor:pointer;}
+.sp-close{position:absolute;top:1rem;right:1rem;font-size:20px;color:#1e2a3a;cursor:pointer;background:none;border:none;}
+
+/* ── SETUP ── */
+#setup{background:#060d1a;}
+.progress-bar{display:flex;gap:6px;margin-bottom:2.5rem;}
+.pb-seg{height:2px;flex:1;background:#0f1e30;border-radius:2px;transition:background 0.3s;}
+.pb-seg.done{background:#534AB7;}
+.pb-seg.active{background:#7F77DD;}
+.setup-icon{width:52px;height:52px;border-radius:50%;background:#0d0820;border:0.5px solid #2d1f6e;display:flex;align-items:center;justify-content:center;margin-bottom:1.5rem;}
+.step-lbl{font-size:10px;color:#3c2e8a;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px;}
+.step-title{font-size:18px;font-weight:500;color:#c4b9f7;margin-bottom:6px;text-align:center;}
+.step-sub{font-size:12px;color:#3c2e8a;text-align:center;line-height:1.6;margin-bottom:2rem;max-width:260px;}
+
+/* PIN */
+.pin-row{display:flex;gap:14px;margin-bottom:2rem;}
+.pd{width:14px;height:14px;border-radius:50%;border:1px solid #2d1f6e;background:transparent;transition:all 0.2s;}
+.pd.on{background:#7F77DD;border-color:#7F77DD;}
+.pin-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:100%;max-width:260px;}
+.pk{background:#080f1e;border:0.5px solid #1a1040;border-radius:10px;padding:18px 10px;font-size:20px;font-weight:300;color:#a89df0;cursor:pointer;text-align:center;transition:all 0.15s;user-select:none;}
+.pk:active{background:#120930;transform:scale(0.95);}
+.pk.del{font-size:15px;color:#2d1f6e;}
+.pk.empty{visibility:hidden;pointer-events:none;}
+.f-err{font-size:12px;color:#c94848;min-height:18px;margin-top:0.5rem;text-align:center;}
+
+/* Voice setup */
+.v-mic{width:80px;height:80px;border-radius:50%;border:0.5px solid #2d1f6e;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.2s;margin-bottom:1rem;}
+.v-mic.on{border-color:#7F77DD;animation:sonar-purple 1.5s infinite;}
+.v-mic-in{width:56px;height:56px;border-radius:50%;background:#0d0820;display:flex;align-items:center;justify-content:center;}
+.v-status{font-size:12px;color:#3c2e8a;min-height:18px;text-align:center;}
+.v-recorded{font-size:12px;color:#7F77DD;margin-top:6px;text-align:center;}
+.step-btn{margin-top:1.5rem;background:#0d0820;border:0.5px solid #534AB7;border-radius:10px;padding:13px 36px;font-size:14px;color:#a89df0;cursor:pointer;transition:all 0.2s;}
+.step-btn:active{transform:scale(0.97);}
+.sw-inp{background:#080f1e;border:0.5px solid #2d1f6e;border-radius:10px;padding:14px 16px;font-size:16px;color:#c4b9f7;width:100%;max-width:260px;outline:none;text-align:center;letter-spacing:0.12em;}
+.sw-inp:focus{border-color:#7F77DD;}
+
+/* ── LOCK ── */
+#lock,#vlock,#sword{background:#060d1a;}
+.lock-icon-wrap{width:52px;height:52px;border-radius:50%;background:#0d0820;border:0.5px solid #2d1f6e;display:flex;align-items:center;justify-content:center;margin-bottom:1.5rem;}
+
+/* ── HEART SCREEN ── */
+#heart{background:#060d1a;}
+.h-nav{display:flex;align-items:center;justify-content:space-between;padding:1.25rem 1.25rem 0;}
+.h-nav-title{font-size:11px;color:#2d1f6e;letter-spacing:0.1em;text-transform:uppercase;}
+.nav-close{width:34px;height:34px;border-radius:50%;border:0.5px solid #1a1040;background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#2d1f6e;font-size:16px;}
+.h-body{flex:1;padding:1rem 1.25rem 1.5rem;display:flex;flex-direction:column;gap:10px;overflow-y:auto;}
+
+.voice-dump-card{background:#080f1e;border:0.5px solid #1a1040;border-radius:14px;padding:1.25rem;}
+.card-lbl{font-size:10px;color:#2d1f6e;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:10px;}
+.dump-txt{font-size:14px;color:#4a3d80;line-height:1.7;min-height:52px;word-break:break-word;}
+.dump-txt.filled{color:#94a3b8;}
+.dump-ctrl{display:flex;align-items:center;gap:10px;margin-top:12px;padding-top:10px;border-top:0.5px solid #0d0820;}
+.d-mic{width:42px;height:42px;border-radius:50%;border:0.5px solid #2d1f6e;background:#0d0820;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:all 0.2s;}
+.d-mic.on{border-color:#7F77DD;background:#140e2e;}
+.d-mic-lbl{font-size:12px;color:#2d1f6e;}
+
+.h-textarea{background:#080f1e;border:0.5px solid #1a1040;border-radius:14px;padding:1rem 1.25rem;font-size:14px;color:#94a3b8;line-height:1.7;outline:none;width:100%;resize:none;min-height:90px;}
+.h-textarea:focus{border-color:#2d1f6e;}
+.h-textarea::placeholder{color:#1a1040;}
+
+.send-btn{width:100%;background:#080f1e;border:0.5px solid #2d1f6e;border-radius:14px;padding:15px;font-size:13px;color:#4a3d80;cursor:pointer;transition:all 0.2s;letter-spacing:0.03em;}
+.send-btn:not(:disabled):hover{border-color:#534AB7;color:#a89df0;}
+.send-btn:active:not(:disabled){transform:scale(0.98);}
+.send-btn:disabled{opacity:0.35;cursor:not-allowed;}
+
+.ai-card{background:#06030f;border:0.5px solid #1a1040;border-radius:14px;padding:1.25rem;display:none;}
+.ai-card.on{display:block;}
+.ai-card-lbl{font-size:10px;color:#2d1f6e;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:10px;}
+.ai-text{font-size:13px;color:#8b83d0;line-height:1.8;}
+.mood-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;}
+.mchip{font-size:10px;padding:3px 10px;border-radius:20px;background:#0d0820;color:#534AB7;border:0.5px solid #1a1040;}
+.thinking{display:flex;gap:5px;align-items:center;padding:2px 0;}
+.thdot{width:6px;height:6px;border-radius:50%;background:#2d1f6e;animation:thpulse 1.2s ease-in-out infinite;}
+.thdot:nth-child(2){animation-delay:0.2s;}
+.thdot:nth-child(3){animation-delay:0.4s;}
+@keyframes thpulse{0%,80%,100%{opacity:0.15;}40%{opacity:1;}}
+
+/* Past entries */
+.entries-section{margin-top:4px;}
+.entries-lbl{font-size:10px;color:#1a1040;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px;}
+.entry-card{background:#06030f;border:0.5px solid #0d0820;border-radius:10px;padding:0.875rem 1rem;margin-bottom:6px;}
+.entry-date{font-size:10px;color:#1a1040;margin-bottom:5px;}
+.entry-text{font-size:12px;color:#2d1f6e;line-height:1.6;}
+.entry-moods{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px;}
+.em{font-size:10px;padding:2px 7px;border-radius:20px;background:#0d0820;color:#2d1f6e;border:0.5px solid #0d0820;}
+
+/* ── BUSINESS SCREEN ── */
+#biz{background:#060d1a;}
+.biz-nav{display:flex;align-items:center;justify-content:space-between;padding:1.25rem 1.25rem 0;}
+.biz-nav-title{font-size:11px;color:#185FA5;letter-spacing:0.1em;text-transform:uppercase;}
+.biz-body{flex:1;padding:1rem 1.25rem 1.5rem;display:flex;flex-direction:column;gap:10px;overflow-y:auto;}
+
+.biz-voice-card{background:#080f1e;border:0.5px solid #0d2040;border-radius:14px;padding:1.25rem;}
+.biz-dump-txt{font-size:14px;color:#1e3a5f;line-height:1.7;min-height:52px;word-break:break-word;}
+.biz-dump-txt.filled{color:#94a3b8;}
+.biz-ctrl{display:flex;align-items:center;gap:10px;margin-top:12px;padding-top:10px;border-top:0.5px solid #060d1a;}
+.b-mic{width:42px;height:42px;border-radius:50%;border:0.5px solid #1e3a5f;background:#060d1a;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:all 0.2s;}
+.b-mic.on{border-color:#378ADD;background:#091828;}
+.b-mic-lbl{font-size:12px;color:#1e3a5f;}
+
+.tag-row{display:flex;gap:7px;flex-wrap:wrap;}
+.tg{font-size:11px;padding:6px 14px;border-radius:20px;border:0.5px solid #0d2040;background:transparent;color:#1e3a5f;cursor:pointer;transition:all 0.15s;}
+.tg.sel.idea{background:#0a2d5a;color:#7ab8f5;border-color:#0a2d5a;}
+.tg.sel.task{background:#1a3d08;color:#8fcf60;border-color:#1a3d08;}
+.tg.sel.reminder{background:#3d1f04;color:#f0a84a;border-color:#3d1f04;}
+
+.biz-save{width:100%;background:#060d1a;border:0.5px solid #1e3a5f;border-radius:14px;padding:15px;font-size:13px;color:#1e3a5f;cursor:pointer;transition:all 0.2s;}
+.biz-save:hover{border-color:#378ADD;color:#6ba3d6;}
+.biz-save:active{transform:scale(0.98);}
+
+.notes-wrap{flex:1;}
+.notes-hdr{font-size:10px;color:#1e3a5f;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px;}
+.nc{background:#080f1e;border:0.5px solid #0d2040;border-radius:10px;padding:0.875rem 1rem;margin-bottom:7px;}
+.nc-top{display:flex;align-items:center;gap:8px;margin-bottom:5px;}
+.ntag{font-size:10px;padding:2px 8px;border-radius:20px;}
+.ntag.idea{background:#0a2d5a;color:#7ab8f5;}
+.ntag.task{background:#1a3d08;color:#8fcf60;}
+.ntag.reminder{background:#3d1f04;color:#f0a84a;}
+.ntime{font-size:10px;color:#1e3a5f;margin-left:auto;}
+.ntext{font-size:13px;color:#334155;line-height:1.6;}
+.no-notes{font-size:13px;color:#0d2040;text-align:center;padding:2rem 0;}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- HOME -->
+<div id="home" class="screen center-screen active">
+  <div class="bg-orb orb1"></div>
+  <div class="bg-orb orb2"></div>
+  <div class="home-inner">
+    <div class="app-brand">v o i c e</div>
+    <div class="mic-ring" id="mainMic" onclick="homeVoice()">
+      <div class="mic-disc">
+        <svg class="mic-icon" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke-width="1.2">
+          <rect x="9" y="2" width="6" height="12" rx="3"/>
+          <path d="M5 10a7 7 0 0 0 14 0"/>
+          <line x1="12" y1="19" x2="12" y2="22"/>
+          <line x1="8" y1="22" x2="16" y2="22"/>
+        </svg>
+      </div>
+    </div>
+    <div class="wave-row" id="homeWave">
+      <div class="wb"></div><div class="wb"></div><div class="wb"></div><div class="wb"></div><div class="wb"></div>
+    </div>
+    <div class="status" id="homeStatus"></div>
+  </div>
+  <div class="settings-btn" onclick="toggleSettings()">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="1.5">
+      <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" stroke="#1e3a5f"/>
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" stroke="#1e3a5f"/>
+    </svg>
+  </div>
+</div>
+
+<!-- SETTINGS PANEL -->
+<div id="settings-panel">
+  <button class="sp-close" onclick="toggleSettings()">&#x2715;</button>
+  <div class="sp-title">GEMINI API KEY</div>
+  <div class="sp-label">Paste your free Gemini key</div>
+  <input class="sp-input" id="geminiKeyInput" type="password" placeholder="AIzaSy..." />
+  <button class="sp-save" onclick="saveKey()">Save Key</button>
+</div>
+
+<!-- SETUP -->
+<div id="setup" class="screen center-screen">
+  <div class="progress-bar">
+    <div class="pb-seg" id="ps1"></div>
+    <div class="pb-seg" id="ps2"></div>
+    <div class="pb-seg" id="ps3"></div>
+  </div>
+  <div class="setup-icon" id="setupIcon">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#7F77DD" stroke-width="1.2">
+      <rect x="3" y="11" width="18" height="11" rx="2"/>
+      <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+    </svg>
+  </div>
+  <div class="step-lbl" id="setupStepLbl">STEP 1 OF 3</div>
+  <div class="step-title" id="setupTitle">Create your PIN</div>
+  <div class="step-sub" id="setupSub">4-digit code for your heart vault</div>
+  <!-- PIN dots -->
+  <div class="pin-row" id="setupDots">
+    <div class="pd" id="spd0"></div><div class="pd" id="spd1"></div>
+    <div class="pd" id="spd2"></div><div class="pd" id="spd3"></div>
+  </div>
+  <!-- PIN grid -->
+  <div class="pin-grid" id="setupPinGrid"></div>
+  <!-- Voice -->
+  <div class="v-mic" id="setupVMic" onclick="setupVoiceRec()" style="display:none;">
+    <div class="v-mic-in">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#7F77DD" stroke-width="1.2">
+        <rect x="9" y="2" width="6" height="12" rx="3"/>
+        <path d="M5 10a7 7 0 0 0 14 0"/>
+        <line x1="12" y1="19" x2="12" y2="22"/>
+        <line x1="8" y1="22" x2="16" y2="22"/>
+      </svg>
+    </div>
+  </div>
+  <div class="v-status" id="setupVStatus"></div>
+  <div class="v-recorded" id="setupVRecorded"></div>
+  <!-- Secret word -->
+  <input class="sw-inp" id="setupWordInp" type="password" placeholder="secret word" style="display:none;"/>
+  <button class="step-btn" id="setupNextBtn" onclick="setupAdvance()" style="display:none;">Continue →</button>
+  <div class="f-err" id="setupErr"></div>
+</div>
+
+<!-- LOCK: PIN -->
+<div id="lock" class="screen center-screen">
+  <div class="lock-icon-wrap">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7F77DD" stroke-width="1.2">
+      <rect x="3" y="11" width="18" height="11" rx="2"/>
+      <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+    </svg>
+  </div>
+  <div class="step-lbl">STEP 1 OF 3</div>
+  <div class="step-title">Enter PIN</div>
+  <div class="pin-row">
+    <div class="pd" id="lpd0"></div><div class="pd" id="lpd1"></div>
+    <div class="pd" id="lpd2"></div><div class="pd" id="lpd3"></div>
+  </div>
+  <div class="pin-grid" id="lockPinGrid"></div>
+  <div class="f-err" id="lockErr"></div>
+</div>
+
+<!-- LOCK: VOICE -->
+<div id="vlock" class="screen center-screen">
+  <div class="lock-icon-wrap">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7F77DD" stroke-width="1.2">
+      <rect x="9" y="2" width="6" height="12" rx="3"/>
+      <path d="M5 10a7 7 0 0 0 14 0"/>
+      <line x1="12" y1="19" x2="12" y2="22"/>
+      <line x1="8" y1="22" x2="16" y2="22"/>
+    </svg>
+  </div>
+  <div class="step-lbl">STEP 2 OF 3</div>
+  <div class="step-title">Voice passphrase</div>
+  <div class="step-sub" style="margin-bottom:1.5rem;">Say your secret phrase</div>
+  <div class="v-mic" id="vlMic" onclick="vlRecord()">
+    <div class="v-mic-in">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#7F77DD" stroke-width="1.2">
+        <rect x="9" y="2" width="6" height="12" rx="3"/>
+        <path d="M5 10a7 7 0 0 0 14 0"/>
+        <line x1="12" y1="19" x2="12" y2="22"/>
+        <line x1="8" y1="22" x2="16" y2="22"/>
+      </svg>
+    </div>
+  </div>
+  <div class="v-status" id="vlStatus">Tap mic to verify</div>
+  <div class="f-err" id="vlErr"></div>
+</div>
+
+<!-- LOCK: SECRET WORD -->
+<div id="sword" class="screen center-screen">
+  <div class="lock-icon-wrap">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7F77DD" stroke-width="1.2">
+      <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+      <path d="M2 17l10 5 10-5M2 12l10 5 10-5"/>
+    </svg>
+  </div>
+  <div class="step-lbl">STEP 3 OF 3</div>
+  <div class="step-title">Secret word</div>
+  <div class="step-sub" style="margin-bottom:1.5rem;">The word only you know</div>
+  <input class="sw-inp" id="swordInp" type="password" placeholder="your secret word"/>
+  <button class="step-btn" style="margin-top:1rem;" onclick="checkSword()">Unlock vault</button>
+  <div class="f-err" id="swordErr"></div>
+</div>
+
+<!-- HEART -->
+<div id="heart" class="screen">
+  <div class="h-nav">
+    <span class="h-nav-title">private vault</span>
+    <div class="nav-close" onclick="goHome()">&#x2715;</div>
+  </div>
+  <div class="h-body">
+    <div class="voice-dump-card">
+      <div class="card-lbl">voice dump</div>
+      <div class="dump-txt" id="dumpTxt">Tap mic — speak freely, no judgment...</div>
+      <div class="dump-ctrl">
+        <div class="d-mic" id="dMic" onclick="dumpVoice()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#534AB7" stroke-width="1.5">
+            <rect x="9" y="2" width="6" height="12" rx="3"/>
+            <path d="M5 10a7 7 0 0 0 14 0"/>
+            <line x1="12" y1="19" x2="12" y2="22"/>
+            <line x1="8" y1="22" x2="16" y2="22"/>
+          </svg>
+        </div>
+        <span class="d-mic-lbl" id="dMicLbl">Tap to speak</span>
+      </div>
+    </div>
+    <textarea class="h-textarea" id="heartTxt" placeholder="Ya type karo jo mann mein hai..." rows="3"></textarea>
+    <button class="send-btn" id="sendBtn" onclick="sendHeart()">Analyze my patterns →</button>
+    <div class="ai-card" id="aiCard">
+      <div class="ai-card-lbl">pattern analysis</div>
+      <div id="aiContent"></div>
+    </div>
+    <div class="entries-section" id="entriesSection"></div>
+  </div>
+</div>
+
+<!-- BUSINESS -->
+<div id="biz" class="screen">
+  <div class="biz-nav">
+    <span class="biz-nav-title">business brain</span>
+    <div class="nav-close" onclick="goHome()">&#x2715;</div>
+  </div>
+  <div class="biz-body">
+    <div class="biz-voice-card">
+      <div class="card-lbl" style="color:#185FA5;">voice note</div>
+      <div class="biz-dump-txt" id="bizTxt">Tap mic — share your idea...</div>
+      <div class="biz-ctrl">
+        <div class="b-mic" id="bMic" onclick="bizVoice()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#378ADD" stroke-width="1.5">
+            <rect x="9" y="2" width="6" height="12" rx="3"/>
+            <path d="M5 10a7 7 0 0 0 14 0"/>
+            <line x1="12" y1="19" x2="12" y2="22"/>
+            <line x1="8" y1="22" x2="16" y2="22"/>
+          </svg>
+        </div>
+        <span class="b-mic-lbl" id="bMicLbl">Tap to record</span>
+      </div>
+    </div>
+    <div class="tag-row">
+      <div class="tg idea sel" id="tg-idea" onclick="pickTag('idea')">idea</div>
+      <div class="tg task" id="tg-task" onclick="pickTag('task')">task</div>
+      <div class="tg reminder" id="tg-reminder" onclick="pickTag('reminder')">reminder</div>
+    </div>
+    <button class="biz-save" onclick="saveBiz()">Save note</button>
+    <div class="notes-wrap">
+      <div class="notes-hdr">saved notes</div>
+      <div id="notesContainer"></div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<script>
+const K={PIN:'_p',VOICE:'_v',WORD:'_w',NOTES:'_n',SETUP:'_s',GKEY:'_g',HENTRIES:'_h'};
+let app={
+  listening:false,
+  setupPin:'',setupVoice:'',setupStep:1,
+  lockPin:'',lockStep:1,
+  bizCapture:'',dumpCapture:'',
+  selTag:'idea',
+  rec:null
+};
+
+/* ─── UTILS ─── */
+function show(id){
+  document.querySelectorAll('.screen').forEach(s=>{s.classList.remove('active');});
+  document.getElementById(id).classList.add('active');
+}
+function goHome(){
+  app.listening=false;app.lockStep=1;app.lockPin='';app.bizCapture='';app.dumpCapture='';
+  const m=document.getElementById('mainMic');
+  m.classList.remove('listening','heart-mode');
+  document.getElementById('homeWave').classList.remove('on');
+  document.getElementById('homeStatus').textContent='';
+  document.getElementById('homeStatus').className='status';
+  document.getElementById('aiCard').classList.remove('on');
+  document.getElementById('heartTxt').value='';
+  document.getElementById('dumpTxt').textContent='Tap mic — speak freely, no judgment...';
+  document.getElementById('dumpTxt').classList.remove('filled');
+  document.getElementById('bizTxt').textContent='Tap mic — share your idea...';
+  document.getElementById('bizTxt').classList.remove('filled');
+  show('home');
+}
+function setupDone(){return !!localStorage.getItem(K.SETUP);}
+function saveKey(){
+  const k=document.getElementById('geminiKeyInput').value.trim();
+  if(k){localStorage.setItem(K.GKEY,k);toggleSettings();showToast('Key saved!');}
+}
+function showToast(msg){
+  const t=document.createElement('div');
+  t.style.cssText='position:fixed;bottom:5rem;left:50%;transform:translateX(-50%);background:#0d2040;color:#6ba3d6;font-size:12px;padding:8px 16px;border-radius:20px;border:0.5px solid #1e3a5f;z-index:200;';
+  t.textContent=msg;document.body.appendChild(t);
+  setTimeout(()=>t.remove(),2000);
+}
+function toggleSettings(){
+  document.getElementById('settings-panel').classList.toggle('open');
+  const saved=localStorage.getItem(K.GKEY)||'';
+  if(saved)document.getElementById('geminiKeyInput').value=saved;
+}
+
+/* ─── VOICE ROUTING ─── */
+const HEART_W=['dil','feel','heart','rona','khushi','takleef','dard','soch','andar','secret','private','mera','meri','akela','alone','mushkil','zindagi','raat','night','gussa','dar','baat','mann','khud','apna'];
+const BIZ_W=['idea','business','kaam','work','project','plan','task','reminder','note','paise','money','startup','client','meeting','call','email','product','service','brand','market','launch','team'];
+
+function homeVoice(){
+  if(app.listening)return;
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){setStatus('Voice not supported on this browser','on');return;}
+  const r=new SR();r.continuous=false;r.interimResults=true;r.lang='en-US';
+  app.listening=true;
+  const mic=document.getElementById('mainMic');
+  mic.classList.add('listening');
+  document.getElementById('homeWave').classList.add('on');
+  setStatus('listening...','on');
+  r.onresult=e=>{
+    const t=Array.from(e.results).map(x=>x[0].transcript).join('').toLowerCase();
+    if(e.results[e.results.length-1].isFinal){
+      app.listening=false;
+      mic.classList.remove('listening');
+      document.getElementById('homeWave').classList.remove('on');
+      route(t);
+    }
+  };
+  r.onerror=()=>{app.listening=false;mic.classList.remove('listening');document.getElementById('homeWave').classList.remove('on');setStatus('Try again','on');};
+  r.onend=()=>{app.listening=false;mic.classList.remove('listening');document.getElementById('homeWave').classList.remove('on');};
+  r.start();app.rec=r;
+}
+
+function route(text){
+  let h=0,b=0;
+  HEART_W.forEach(w=>{if(text.includes(w))h++;});
+  BIZ_W.forEach(w=>{if(text.includes(w))b++;});
+  if(h>=b){
+    document.getElementById('mainMic').classList.add('heart-mode');
+    setStatus('opening vault...','purple');
+    setTimeout(()=>{
+      if(!setupDone())startSetup();
+      else startLock();
+    },500);
+  } else {
+    setStatus('opening brain...','on');
+    setTimeout(()=>{loadNotes();show('biz');},400);
+  }
+}
+
+function setStatus(msg,cls){
+  const s=document.getElementById('homeStatus');
+  s.textContent=msg;s.className='status '+(cls||'');
+}
+
+/* ─── SETUP ─── */
+function startSetup(){
+  app.setupStep=1;app.setupPin='';app.setupVoice='';
+  renderSetup();show('setup');
+}
+function renderSetup(){
+  const s=app.setupStep;
+  [1,2,3].forEach(i=>{
+    const el=document.getElementById('ps'+i);
+    el.className='pb-seg'+(i<s?' done':i===s?' active':'');
+  });
+  const pg=document.getElementById('setupPinGrid');
+  const vm=document.getElementById('setupVMic');
+  const wi=document.getElementById('setupWordInp');
+  const nb=document.getElementById('setupNextBtn');
+  const dots=document.getElementById('setupDots');
+  [pg,vm,wi,nb,dots].forEach(el=>el.style.display='none');
+  document.getElementById('setupErr').textContent='';
+  document.getElementById('setupVRecorded').textContent='';
+  if(s===1){
+    document.getElementById('setupStepLbl').textContent='STEP 1 OF 3';
+    document.getElementById('setupTitle').textContent='Create your PIN';
+    document.getElementById('setupSub').textContent='4-digit code for your heart vault';
+    dots.style.display='flex';pg.style.display='grid';
+    app.setupPin='';updateDots('',true);buildPinGrid('setup');
+  } else if(s===2){
+    document.getElementById('setupStepLbl').textContent='STEP 2 OF 3';
+    document.getElementById('setupTitle').textContent='Record voice passphrase';
+    document.getElementById('setupSub').textContent='Say a phrase only you know.\nE.g. "my sky is purple at midnight"';
+    vm.style.display='flex';document.getElementById('setupVStatus').textContent='Tap mic to record';
+  } else {
+    document.getElementById('setupStepLbl').textContent='STEP 3 OF 3';
+    document.getElementById('setupTitle').textContent='Set secret word';
+    document.getElementById('setupSub').textContent='One memorable word — only you know';
+    wi.style.display='block';nb.style.display='block';
+  }
+}
+function updateDots(pin,isSetup){
+  const p=isSetup?'spd':'lpd';
+  for(let i=0;i<4;i++){const d=document.getElementById(p+i);if(d)d.classList.toggle('on',i<pin.length);}
+}
+function buildPinGrid(mode){
+  const grid=document.getElementById(mode==='setup'?'setupPinGrid':'lockPinGrid');
+  grid.innerHTML='';
+  [1,2,3,4,5,6,7,8,9,'empty',0,'del'].forEach(n=>{
+    const d=document.createElement('div');
+    if(n==='empty'){d.className='pk empty';grid.appendChild(d);return;}
+    d.className='pk'+(n==='del'?' del':'');
+    d.textContent=n==='del'?'⌫':n;
+    d.onclick=()=>mode==='setup'?handleSetupPin(String(n)):handleLockPin(String(n));
+    grid.appendChild(d);
+  });
+}
+function handleSetupPin(v){
+  if(v==='del')app.setupPin=app.setupPin.slice(0,-1);
+  else if(app.setupPin.length<4)app.setupPin+=v;
+  updateDots(app.setupPin,true);
+  if(app.setupPin.length===4)setTimeout(()=>{app.setupStep=2;renderSetup();},200);
+}
+function setupVoiceRec(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){document.getElementById('setupVStatus').textContent='Not supported — skip';document.getElementById('setupNextBtn').style.display='block';return;}
+  const r=new SR();r.lang='en-US';r.continuous=false;r.interimResults=false;
+  const vm=document.getElementById('setupVMic');vm.classList.add('on');
+  document.getElementById('setupVStatus').textContent='Recording... speak now';
+  r.onresult=e=>{
+    app.setupVoice=e.results[0][0].transcript.toLowerCase().trim();
+    vm.classList.remove('on');
+    document.getElementById('setupVStatus').textContent='Recorded!';
+    document.getElementById('setupVRecorded').textContent='"'+app.setupVoice+'"';
+    setTimeout(()=>{app.setupStep=3;renderSetup();},800);
+  };
+  r.onerror=()=>{vm.classList.remove('on');document.getElementById('setupVStatus').textContent='Error — tap again';};
+  r.start();
+}
+function setupAdvance(){
+  const w=document.getElementById('setupWordInp').value.trim().toLowerCase();
+  if(!w){document.getElementById('setupErr').textContent='Enter a secret word';return;}
+  localStorage.setItem(K.PIN,app.setupPin);
+  localStorage.setItem(K.VOICE,app.setupVoice||'__skip__');
+  localStorage.setItem(K.WORD,w);
+  localStorage.setItem(K.SETUP,'1');
+  startLock();
+}
+
+/* ─── LOCK ─── */
+function startLock(){
+  app.lockStep=1;app.lockPin='';
+  buildPinGrid('lock');updateDots('',false);
+  document.getElementById('lockErr').textContent='';
+  show('lock');
+}
+function handleLockPin(v){
+  if(v==='del')app.lockPin=app.lockPin.slice(0,-1);
+  else if(app.lockPin.length<4)app.lockPin+=v;
+  updateDots(app.lockPin,false);
+  document.getElementById('lockErr').textContent='';
+  if(app.lockPin.length===4){
+    setTimeout(()=>{
+      if(app.lockPin===localStorage.getItem(K.PIN)){
+        document.getElementById('vlStatus').textContent='Tap mic to verify';
+        document.getElementById('vlErr').textContent='';
+        show('vlock');
+      } else {
+        document.getElementById('lockErr').textContent='Wrong PIN';
+        app.lockPin='';updateDots('',false);
+      }
+    },150);
+  }
+}
+function vlRecord(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  const saved=localStorage.getItem(K.VOICE)||'__skip__';
+  if(!SR||saved==='__skip__'){show('sword');return;}
+  const r=new SR();r.lang='en-US';r.continuous=false;r.interimResults=false;
+  const vm=document.getElementById('vlMic');vm.classList.add('on');
+  document.getElementById('vlStatus').textContent='Listening...';
+  r.onresult=e=>{
+    const spoken=e.results[0][0].transcript.toLowerCase().trim();
+    vm.classList.remove('on');
+    const ok=simScore(spoken,saved)>0.45;
+    if(ok){
+      document.getElementById('vlStatus').textContent='Matched ✓';
+      setTimeout(()=>{document.getElementById('swordErr').textContent='';document.getElementById('swordInp').value='';show('sword');},500);
+    } else {
+      document.getElementById('vlErr').textContent='Phrase did not match. Try again.';
+    }
+  };
+  r.onerror=()=>{vm.classList.remove('on');document.getElementById('vlStatus').textContent='Error — tap again';};
+  r.start();
+}
+function simScore(a,b){
+  const wa=a.split(' '),wb=b.split(' ');
+  const c=wa.filter(w=>wb.includes(w));
+  return c.length/Math.max(wa.length,wb.length,1);
+}
+function checkSword(){
+  const v=document.getElementById('swordInp').value.trim().toLowerCase();
+  if(v===localStorage.getItem(K.WORD)){loadEntries();show('heart');}
+  else{document.getElementById('swordErr').textContent='Wrong secret word';}
+}
+
+/* ─── HEART ─── */
+function dumpVoice(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR)return;
+  if(app.listening){if(app.rec)app.rec.stop();return;}
+  const r=new SR();r.continuous=true;r.interimResults=true;r.lang='en-US';
+  const mic=document.getElementById('dMic'),lbl=document.getElementById('dMicLbl');
+  const disp=document.getElementById('dumpTxt');
+  app.listening=true;mic.classList.add('on');lbl.textContent='Tap to stop';disp.classList.add('filled');
+  r.onresult=e=>{
+    const t=Array.from(e.results).map(x=>x[0].transcript).join(' ');
+    disp.textContent=t;app.dumpCapture=t;
+  };
+  r.onend=()=>{app.listening=false;mic.classList.remove('on');lbl.textContent='Tap to speak';};
+  r.start();app.rec=r;
+}
+function sendHeart(){
+  const v=app.dumpCapture,t=document.getElementById('heartTxt').value.trim();
+  const combined=(v+' '+t).trim();
+  if(!combined)return;
+  const btn=document.getElementById('sendBtn');btn.disabled=true;
+  const card=document.getElementById('aiCard'),content=document.getElementById('aiContent');
+  card.classList.add('on');
+  content.innerHTML='<div class="thinking"><div class="thdot"></div><div class="thdot"></div><div class="thdot"></div></div>';
+  callGemini(combined).then(html=>{
+    content.innerHTML=html;btn.disabled=false;
+    saveEntry(combined,extractMoods(combined));
+    loadEntries();
+  }).catch(()=>{
+    content.innerHTML='<p class="ai-text">'+localInsight(combined)+'</p>'+moodHtml(extractMoods(combined));
+    btn.disabled=false;
+    saveEntry(combined,extractMoods(combined));loadEntries();
+  });
+}
+async function callGemini(text){
+  const key=localStorage.getItem(K.GKEY)||'';
+  if(!key)return'<p class="ai-text">'+localInsight(text)+'</p>'+moodHtml(extractMoods(text));
+  const res=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key='+key,{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({contents:[{parts:[{text:`You are a private, compassionate AI journal companion. Analyze this personal entry in 3-4 sentences. Detect emotional patterns, recurring themes, and mood. Be warm, insightful, non-judgmental. Respond in Urdu/Hinglish matching user's tone. Entry: "${text}"`}]}]})
+  });
+  const d=await res.json();
+  const aiTxt=d.candidates?.[0]?.content?.parts?.[0]?.text||localInsight(text);
+  return '<p class="ai-text">'+aiTxt+'</p>'+moodHtml(extractMoods(text));
+}
+function localInsight(t){
+  const l=t.toLowerCase();
+  let s='Tumhare words mein depth hai. ';
+  if(l.match(/akela|alone/))s+='Akela pan feel ho raha hai — yeh valid hai. ';
+  if(l.match(/khushi|happy|acha/))s+='Positivity bhi dikh rahi hai tumhare andar. ';
+  if(l.match(/dard|hurt|dukh/))s+='Dard hai — express karna hi pehla qadam hai. ';
+  if(l.match(/gussa|angry/))s+='Frustration feel ho rahi hai, yeh suno apne aap ko. ';
+  s+='Har dump se dimaag halka hota hai — keep going.';
+  return s;
+}
+function extractMoods(t){
+  const l=t.toLowerCase(),tags=[];
+  if(l.match(/khushi|happy|acha|great|maza/))tags.push('positive');
+  if(l.match(/dard|hurt|dukh|sad|rona/))tags.push('pain');
+  if(l.match(/dar|fear|anxiety|tension/))tags.push('anxious');
+  if(l.match(/akela|alone|koi nahi/))tags.push('isolated');
+  if(l.match(/kaam|work|busy|project/))tags.push('work-heavy');
+  if(l.match(/gussa|angry|frustrat/))tags.push('frustrated');
+  if(l.match(/kal|future|dream|soch/))tags.push('forward-looking');
+  if(!tags.length)tags.push('reflective');
+  return tags;
+}
+function moodHtml(moods){
+  return '<div class="mood-chips">'+moods.map(m=>'<span class="mchip">'+m+'</span>').join('')+'</div>';
+}
+function saveEntry(text,moods){
+  const entries=JSON.parse(localStorage.getItem(K.HENTRIES)||'[]');
+  entries.unshift({text:text.slice(0,200),moods,date:new Date().toLocaleDateString('en-PK',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})});
+  if(entries.length>30)entries.pop();
+  localStorage.setItem(K.HENTRIES,JSON.stringify(entries));
+}
+function loadEntries(){
+  const entries=JSON.parse(localStorage.getItem(K.HENTRIES)||'[]');
+  const sec=document.getElementById('entriesSection');
+  if(!entries.length){sec.innerHTML='';return;}
+  sec.innerHTML='<div class="entries-lbl">past entries</div>'+entries.slice(0,5).map(e=>`
+    <div class="entry-card">
+      <div class="entry-date">${e.date}</div>
+      <div class="entry-text">${e.text}</div>
+      <div class="entry-moods">${e.moods.map(m=>'<span class="em">'+m+'</span>').join('')}</div>
+    </div>`).join('');
+}
+
+/* ─── BUSINESS ─── */
+function bizVoice(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR)return;
+  if(app.listening){if(app.rec)app.rec.stop();return;}
+  const r=new SR();r.continuous=true;r.interimResults=true;r.lang='en-US';
+  const mic=document.getElementById('bMic'),lbl=document.getElementById('bMicLbl');
+  const disp=document.getElementById('bizTxt');
+  app.listening=true;mic.classList.add('on');lbl.textContent='Tap to stop';disp.classList.add('filled');
+  r.onresult=e=>{
+    const t=Array.from(e.results).map(x=>x[0].transcript).join(' ');
+    disp.textContent=t;app.bizCapture=t;
+  };
+  r.onend=()=>{app.listening=false;mic.classList.remove('on');lbl.textContent='Tap to record';};
+  r.start();app.rec=r;
+}
+function pickTag(tag){
+  app.selTag=tag;
+  ['idea','task','reminder'].forEach(t=>{
+    const el=document.getElementById('tg-'+t);
+    el.className='tg '+t+(t===tag?' sel':'');
+  });
+}
+function saveBiz(){
+  const text=app.bizCapture||document.getElementById('bizTxt').textContent;
+  if(!text||text==='Tap mic — share your idea...')return;
+  const notes=JSON.parse(localStorage.getItem(K.NOTES)||'[]');
+  notes.unshift({id:Date.now(),text,tag:app.selTag,time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})});
+  localStorage.setItem(K.NOTES,JSON.stringify(notes));
+  app.bizCapture='';
+  document.getElementById('bizTxt').textContent='Tap mic — share your idea...';
+  document.getElementById('bizTxt').classList.remove('filled');
+  loadNotes();showToast('Note saved!');
+}
+function loadNotes(){
+  const notes=JSON.parse(localStorage.getItem(K.NOTES)||'[]');
+  const c=document.getElementById('notesContainer');
+  if(!notes.length){c.innerHTML='<div class="no-notes">No notes yet</div>';return;}
+  c.innerHTML=notes.slice(0,15).map(n=>`
+    <div class="nc">
+      <div class="nc-top">
+        <span class="ntag ${n.tag}">${n.tag}</span>
+        <span class="ntime">${n.time}</span>
+      </div>
+      <div class="ntext">${n.text}</div>
+    </div>`).join('');
+}
+
+/* ─── INIT ─── */
+pickTag('idea');
+</script>
+</body>
+</html>
